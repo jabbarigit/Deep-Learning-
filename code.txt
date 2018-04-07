@@ -1,0 +1,69 @@
+Abdoh Jabbari
+
+I removed the libraries to minimize the similarities 
+
+# the list of h_rparameter along with the values
+NumberOfLearn_Rate = 0.1
+NumberOf_epo = 50
+SizeOfBatch = 150
+Displays = 1
+
+# in this part tensorflow Graphing Input(the placeholders)
+# the datasets has the shape of 28x28=784
+X_P_Hoder = tf.placeholder(tf.float32, [None, 784]) 
+
+# the recognition digits are starting from 0 to 9 = 10 digits
+Y_P_Hoder = tf.placeholder(tf.float32, [None, 10]) 
+
+# in this part models is setting up weight
+w_var = tf.Variable(tf.ones([784, 10]))
+b_var = tf.Variable(tf.zeros([10]))
+
+# building the model
+Predict_Fun = tf.nn.softmax(tf.matmul(X_P_Hoder, w_var) + b_var) 
+
+# now in this section we need to lower the error
+
+cost = tf.reduce_mean(-tf.reduce_sum(Y_P_Hoder*tf.log(Predict_Fun), reduction_indices=1))
+
+# optimization part 
+Opt = tf.train.GradientDescentOptimizer(NumberOfLearn_Rate).minimize(cost)
+
+# creating variables 
+init_var = tf.global_variables_initializer()
+
+# here the data train session 
+with tf.Session() as sess:
+
+   
+    sess.run(init_var)
+	#sending the graph of the result to path
+    RecordTo = tf.summary.FileWriter('./', sess.graph)
+
+    # the model start Training 
+    for epo in range(NumberOf_epo):
+        Cost_AVG = 0.
+        Bat_Total = int(mnist.train.num_examples/SizeOfBatch)
+		
+      # For_loop_to_check_all_the_batches
+        for j in range(Bat_Total):
+            Bat_Xs, Bat_Ys = mnist.train.next_batch(SizeOfBatch)
+			
+            # start_running_the_optimization_and_cost_op_to_check_the_loss_value
+            _, Loss_Value = sess.run([Opt, cost], feed_dict={X_P_Hoder: Bat_Xs,
+                                                          Y_P_Hoder: Bat_Ys})
+            # checking_out_ave_loss
+			
+            Cost_AVG += Loss_Value / Bat_Total
+        
+        if (epo+1) % Displays == 0:
+            print("Epoch:", '%04d' % (epo+1), "cost=", "{:.9f}".format(Cost_AVG))
+
+    print("Done from The Optimization")
+
+    # in this final part the code is testing_the_model
+    Final_Pred = tf.equal(tf.argmax(Predict_Fun, 1), tf.argmax(Y_P_Hoder, 1))
+	
+    # checking out the Final_Results or accuracy 
+    Final_Results = tf.reduce_mean(tf.cast(Final_Pred, tf.float32))
+    print("The accuracy:", Final_Results.eval({X_P_Hoder: mnist.test.images, Y_P_Hoder: mnist.test.labels}))
